@@ -56,3 +56,14 @@ Yes
 Nothing fancy here, we just broadcast the internal ip on the network and connect the processes using the informed ~~port~~ "clipboard code".
 
 The data then is transfered between the machines via an encrypted TLS connection.
+
+## Issues
+
+If you getting Timeout error when connecting client, try to start server with -i option followed by you network interface ip
+```bash
+$ clipshare -i 192.168.1.10
+```
+List of availible interfaces you can get by typing:
+```bash
+$ clipshare -l
+```

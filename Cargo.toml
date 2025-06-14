@@ -1,9 +1,9 @@
 [package]
 name = "clipshare"
-version = "0.0.7"
-edition = "2021"
+version = "0.0.8"
+edition = "2024"
 license = "MIT"
-authors = ["Rodrigo Navarro <rnavarro@rnavarro.com.br>"]
+authors = ["Rodrigo Navarro <rnavarro@rnavarro.com.br>", "Igor Kalishenko <f@f.com>"]
 description = "Share clipboard between machines on your local network"
 categories = ["command-line-utilities"]
 keywords = ["clipboard", "share"]
@@ -12,6 +12,7 @@ repository = "https://github.com/reu/clipshare"
 [dependencies]
 arboard = "3.2.0"
 clap = { version = "4.2.7", features = ["derive"] }
+if-addrs = "0.13.4"
 rcgen = "0.10.0"
 rustls = "0.21.1"
 tokio = { version = "1.28.0", features = ["io-std", "io-util", "macros", "net", "rt", "sync", "time"] }

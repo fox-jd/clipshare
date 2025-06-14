@@ -13,6 +13,7 @@ use tokio_rustls::{TlsAcceptor, TlsConnector};
 use tracing::{debug, error_span, instrument, metadata::LevelFilter, trace, Instrument};
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use if_addrs::get_if_addrs;
 
 use crate::clipboard::Clipboard;
 
@@ -29,10 +30,32 @@ struct Cli {
     /// Don´t clear the clipboard on start
     #[arg(long)]
     no_clear: bool,
+
+    /// Network interface to bind (e.g. 192.168.1.10)
+    #[arg(short, long)]
+    interface: Option<String>,
+
+    /// List available network interfaces and exit
+    #[arg(short, long)]
+    list_interfaces: bool,
 }
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+    let args = Cli::parse();
+
+    if args.list_interfaces {
+        for iface in get_if_addrs()? {
+            println!(
+                "{}: {}",
+                iface.name,
+                iface.ip(),
+                //iface.kind
+            );
+        }
+        return Ok(());
+    }
+
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(
@@ -43,8 +66,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .with(ErrorLayer::default())
         .init();
 
-    let args = Cli::parse();
-
     let clipboard = Arc::new(if args.no_clear {
         Clipboard::new()
     } else {
@@ -53,13 +74,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     match args.clipboard {
         Some(port) => start_client(clipboard, port).await,
-        None => start_server(clipboard).await,
+        None => start_server(clipboard, args.interface).await,
     }
 }
 
 #[instrument(skip(clipboard))]
-async fn start_server(clipboard: Arc<Clipboard>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let socket = UdpSocket::bind("0.0.0.0:0").await?;
+async fn start_server(
+    clipboard: Arc<Clipboard>,
+    interface: Option<String>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let bind_addr = interface
+        .as_deref()
+        .unwrap_or("0.0.0.0");
+    let socket = UdpSocket::bind((bind_addr, 0)).await?;
     socket.set_broadcast(true)?;
     let port = socket.local_addr()?.port();
 
